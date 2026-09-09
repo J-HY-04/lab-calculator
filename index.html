@@ -120,6 +120,47 @@
     color: var(--muted);
     text-align: center;
   }
+
+  /*
+    모바일 대응 (mobile layout)
+    - 화면 폭이 480px 이하이면 좁은 폰으로 간주한다.
+    - 한 줄(.row)에 [라벨 | 입력창 | 단위]를 가로로 늘어놓으면
+      입력창이 눌려서 숫자가 잘 안 보인다. 그래서 세로로 쌓는다.
+    - 입력창 글자 크기를 16px 로 키운다: iOS Safari 는 폰트가 16px 미만인
+      입력창을 탭하면 화면을 자동 확대(zoom)하는데, 16px 이상이면 그 동작이 없다.
+  */
+  @media (max-width: 480px) {
+    body {
+      padding: 16px 12px 48px;   /* 좌우 여백을 줄여 카드 폭 확보 */
+    }
+    .card {
+      padding: 16px;
+    }
+    .row {
+      flex-direction: column;    /* 가로 정렬 → 세로 쌓기 */
+      align-items: stretch;      /* 자식 요소를 가로로 꽉 채움 */
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+    .row label {
+      flex: none;                /* 고정 140px 폭 해제 */
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .row input,
+    .row select {
+      width: 100%;
+      font-size: 16px;           /* iOS 자동 확대 방지 */
+    }
+    .row .unit {
+      flex: none;
+      font-size: 0.8rem;
+      /* 단위 설명 안의 <br>(예: "cells/mL / per OD")은 한 줄로 편다 */
+    }
+    .row .unit br {
+      display: none;
+    }
+  }
 </style>
 </head>
 <body>
