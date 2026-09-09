@@ -1,7 +1,9 @@
 # 실험실 계산기 (Lab Calculator)
 
 미생물 실험에서 자주 쓰는 계산 3가지를 브라우저에서 바로 하는 단일 HTML 파일 도구.
-인터넷 연결·설치 불필요, 외부 라이브러리 없음.
+설치 불필요, 외부 라이브러리 없음.
+
+**바로 쓰기 → https://j-hy-04.github.io/lab-calculator/** (PC·폰 브라우저 모두 가능)
 
 ## 기능
 
@@ -13,9 +15,13 @@
 
 ## 사용법
 
-1. `lab-calculator.html` 파일을 웹 브라우저로 연다 (더블클릭).
-2. 각 카드에 값을 넣고 **계산** 버튼을 누른다.
-3. 희석 계산은 4칸 중 **모르는 1칸을 비워두면** 그 값을 구해 준다.
+- **온라인**: 위 링크(https://j-hy-04.github.io/lab-calculator/) 접속. 폰에서도 그대로 동작.
+- **오프라인**: `index.html` 파일을 내려받아 웹 브라우저로 연다 (더블클릭).
+
+사용 순서:
+
+1. 각 카드에 값을 넣고 **계산** 버튼을 누른다.
+2. 희석 계산은 4칸 중 **모르는 1칸을 비워두면** 그 값을 구해 준다.
 
 ## 주의
 
@@ -40,7 +46,7 @@
 
 ```
 lab-calculator/
-├── lab-calculator.html   # 계산기 본체 (HTML + CSS + JS 한 파일)
-├── README.md             # 이 문서
-└── .gitignore            # Git 추적 제외 목록
+├── index.html   # 계산기 본체 (HTML + CSS + JS 한 파일). GitHub Pages가 이 파일을 서비스
+├── README.md    # 이 문서
+└── .gitignore   # Git 추적 제외 목록
 ```
