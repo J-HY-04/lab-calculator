@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실험실 계산기 (Lab Calculator)</title>
+<style>
+  /*
+    스타일 시트(style sheet)
+    - 별도 CSS 파일 없이 이 <style> 블록에 전부 넣었다. 파일 하나로 끝내기 위함.
+    - 색상은 눈이 편한 밝은 회색 배경 + 파란 강조색으로 통일.
+  */
+  :root {
+    --accent: #2563eb;        /* 강조색(accent color) */
+    --border: #d1d5db;        /* 테두리 색 */
+    --bg: #f8fafc;            /* 페이지 배경 */
+    --card-bg: #ffffff;       /* 카드 배경 */
+    --text: #1e293b;          /* 본문 글자색 */
+    --muted: #64748b;         /* 흐린 글자색(설명, 각주) */
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px 16px 64px;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 1.5rem;
+    text-align: center;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+  }
+  /* 계산기 하나하나를 감싸는 카드(card) */
+  .card {
+    max-width: 520px;
+    margin: 0 auto 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    margin: 0 0 4px;
+  }
+  .card .formula {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    font-style: italic;
+  }
+  /* 입력 한 줄: 라벨 + 숫자 입력창 + 단위 */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .row label {
+    flex: 0 0 140px;
+    font-size: 0.9rem;
+  }
+  .row input, .row select {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  .row .unit {
+    flex: 0 0 56px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  button:hover { background: #1d4ed8; }
+  /* 계산 결과 표시 영역 */
+  .result {
+    margin-top: 14px;
+    padding: 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    min-height: 1.2em;
+    white-space: pre-line;   /* \n 을 줄바꿈으로 표시 */
+  }
+  .result.error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+  }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  footer {
+    max-width: 520px;
+    margin: 32px auto 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>실험실 계산기</h1>
+<p class="subtitle">Lab Calculator — 희석 · 몰농도 변환 · OD<sub>600</sub> 세균 수 추정</p>
+
+<!-- ============================================================
+     1. 희석 계산 (Dilution) — C1V1 = C2V2
+     ============================================================ -->
+<div class="card">
+  <h2>1. 희석 계산 (Dilution)</h2>
+  <p class="formula">C₁V₁ = C₂V₂ &nbsp;|&nbsp; 모르는 값 1칸을 비워두면 그 값을 구한다</p>
+
+  <div class="row">
+    <label for="d-c1">stock 농도 C₁</label>
+    <input type="number" id="d-c1" step="any" placeholder="예: 1000">
+    <span class="unit">농도</span>
+  </div>
+  <div class="row">
+    <label for="d-v1">필요한 stock 양 V₁</label>
+    <input type="number" id="d-v1" step="any" placeholder="구하려면 비움">
+    <span class="unit">부피</span>
+  </div>
+  <div class="row">
+    <label for="d-c2">목표 농도 C₂</label>
+    <input type="number" id="d-c2" step="any" placeholder="예: 50">
+    <span class="unit">농도</span>
+  </div>
+  <div class="row">
+    <label for="d-v2">최종 부피 V₂</label>
+    <input type="number" id="d-v2" step="any" placeholder="예: 20">
+    <span class="unit">부피</span>
+  </div>
+
+  <button onclick="calcDilution()">계산</button>
+  <div class="result" id="d-result"></div>
+  <p class="note">
+    C₁·C₂는 같은 단위끼리(예: 둘 다 µg/mL), V₁·V₂도 같은 단위끼리(예: 둘 다 mL) 넣으면
+    결과가 그 단위로 나온다. 4칸 중 정확히 1칸만 비워야 한다.
+  </p>
+</div>
+
+<!-- ============================================================
+     2. 몰농도 ↔ 질량 농도 변환 (Molarity <-> mass concentration)
+     ============================================================ -->
+<div class="card">
+  <h2>2. 몰농도 ↔ 질량 농도 변환</h2>
+  <p class="formula">질량농도(g/L) = 몰농도(mol/L) × 분자량(g/mol)</p>
+
+  <div class="row">
+    <label for="m-mode">변환 방향</label>
+    <select id="m-mode" onchange="updateMolarityLabels()">
+      <option value="molToMass">몰농도 → 질량 (시약 몇 g 달지)</option>
+      <option value="massToMol">질량 → 몰농도</option>
+    </select>
+    <span class="unit"></span>
+  </div>
+  <div class="row">
+    <label for="m-mw">분자량 (MW)</label>
+    <input type="number" id="m-mw" step="any" placeholder="예: 58.44 (NaCl)">
+    <span class="unit">g/mol</span>
+  </div>
+  <div class="row">
+    <label id="m-input-label" for="m-value">몰농도</label>
+    <input type="number" id="m-value" step="any" placeholder="예: 0.5">
+    <span class="unit" id="m-input-unit">mol/L</span>
+  </div>
+  <div class="row">
+    <label for="m-vol">만들 부피</label>
+    <input type="number" id="m-vol" step="any" placeholder="예: 500">
+    <span class="unit">mL</span>
+  </div>
+
+  <button onclick="calcMolarity()">계산</button>
+  <div class="result" id="m-result"></div>
+  <p class="note">
+    분자량은 시약 병 라벨(formula weight, F.W.) 값을 그대로 쓰면 된다.
+    수화물(hydrate)이면 결정수를 포함한 분자량을 써야 한다.
+  </p>
+</div>
+
+<!-- ============================================================
+     3. OD600 -> 세균 수 추정 (cell density estimate)
+     ============================================================ -->
+<div class="card">
+  <h2>3. OD<sub>600</sub> → 세균 수 추정</h2>
+  <p class="formula">세균 수(cells/mL) ≈ OD₆₀₀ × 환산계수(conversion factor)</p>
+
+  <div class="row">
+    <label for="od-value">측정한 OD₆₀₀</label>
+    <input type="number" id="od-value" step="any" placeholder="예: 0.6">
+    <span class="unit"></span>
+  </div>
+  <div class="row">
+    <label for="od-factor">환산계수</label>
+    <input type="number" id="od-factor" step="any" value="8e8">
+    <span class="unit">cells/mL<br>per OD</span>
+  </div>
+  <div class="row">
+    <label for="od-culvol">배양액 부피</label>
+    <input type="number" id="od-culvol" step="any" placeholder="예: 5">
+    <span class="unit">mL</span>
+  </div>
+
+  <button onclick="calcOD()">계산</button>
+  <div class="result" id="od-result"></div>
+  <p class="note">
+    ⚠️ <b>환산계수는 균주(strain)·분광광도계(spectrophotometer) 기종·큐벳 광경로에 따라 달라진다.</b>
+    기본값 8×10⁸ cells/mL per OD₆₀₀ 는 <i>E. coli</i> 대상으로 여러 문헌에서 인용되는 대략치이며
+    (보고에 따라 5×10⁸ ~ 1×10⁹ 범위), 정확한 값은 본인 실험실에서
+    희석 도말(serial dilution plating)로 직접 보정(calibration)해야 한다.
+    OD₆₀₀ 0.8 이상에서는 빛 산란(scattering) 비선형성 때문에 희석 후 측정하는 것이 정확하다.
+  </p>
+</div>
+
+<footer>
+  이 페이지는 인터넷 연결 없이 브라우저에서 바로 동작한다. (외부 라이브러리 없음)<br>
+  계산 결과는 참고용이며, 중요한 실험은 반드시 직접 검산할 것.
+</footer>
+
+<script>
+  /* ============================================================
+     공통 유틸리티 함수
+     ============================================================ */
+
+  // id 로 input 요소의 값을 숫자로 읽는다.
+  // 비어 있으면 null, 숫자가 아니면 NaN 을 반환한다.
+  function readNum(id) {
+    const raw = document.getElementById(id).value.trim();
+    if (raw === "") return null;         // 빈 칸은 null
+    return Number(raw);                  // "1e9" 같은 지수 표기도 Number() 가 처리
+  }
+
+  // 결과 영역에 텍스트를 표시한다. isError=true 면 빨간 오류 스타일.
+  function showResult(id, text, isError) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.classList.toggle("error", !!isError);
+  }
+
+  // 큰 수/작은 수를 읽기 쉽게 표기한다.
+  // 1e4 이상이거나 1e-3 미만이면 지수 표기(과학적 표기법), 아니면 소수 4자리까지.
+  function fmt(x) {
+    if (!isFinite(x)) return String(x);
+    const abs = Math.abs(x);
+    if (abs !== 0 && (abs >= 1e4 || abs < 1e-3)) {
+      return x.toExponential(3);         // 예: 2.400e+8
+    }
+    return parseFloat(x.toFixed(4)).toString();
+  }
+
+  /* ============================================================
+     1. 희석 계산 (Dilution)  C1V1 = C2V2
+     ============================================================ */
+  function calcDilution() {
+    // 4개 값을 읽는다. 비어 있으면 null.
+    const vals = {
+      c1: readNum("d-c1"),
+      v1: readNum("d-v1"),
+      c2: readNum("d-c2"),
+      v2: readNum("d-v2"),
+    };
+
+    // 비어 있는(=구해야 하는) 항목의 key 목록
+    const missing = Object.keys(vals).filter(k => vals[k] === null);
+
+    // 정확히 1칸만 비어 있어야 계산 가능
+    if (missing.length !== 1) {
+      showResult("d-result",
+        "4칸 중 정확히 1칸만 비워 주세요. (지금 비어 있는 칸: " + missing.length + "개)",
+        true);
+      return;
+    }
+
+    // 채워진 값 중에 숫자가 아닌 것이 있으면 오류
+    for (const k of Object.keys(vals)) {
+      if (vals[k] !== null && !isFinite(vals[k])) {
+        showResult("d-result", "숫자가 아닌 값이 있습니다.", true);
+        return;
+      }
+    }
+
+    const target = missing[0];   // 구할 대상
+    let result, label;
+
+    // C1V1 = C2V2 를 대상에 맞게 이항(移項)해서 계산
+    if (target === "c1") {
+      // C1 = C2V2 / V1
+      if (vals.v1 === 0) { showResult("d-result", "V₁ 이 0이면 C₁ 을 구할 수 없습니다.", true); return; }
+      result = (vals.c2 * vals.v2) / vals.v1;
+      label = "필요한 stock 농도 C₁";
+    } else if (target === "v1") {
+      // V1 = C2V2 / C1
+      if (vals.c1 === 0) { showResult("d-result", "C₁ 이 0이면 V₁ 을 구할 수 없습니다.", true); return; }
+      result = (vals.c2 * vals.v2) / vals.c1;
+      label = "취해야 할 stock 부피 V₁";
+    } else if (target === "c2") {
+      // C2 = C1V1 / V2
+      if (vals.v2 === 0) { showResult("d-result", "V₂ 가 0이면 C₂ 를 구할 수 없습니다.", true); return; }
+      result = (vals.c1 * vals.v1) / vals.v2;
+      label = "최종 농도 C₂";
+    } else { // target === "v2"
+      // V2 = C1V1 / C2
+      if (vals.c2 === 0) { showResult("d-result", "C₂ 가 0이면 V₂ 를 구할 수 없습니다.", true); return; }
+      result = (vals.c1 * vals.v1) / vals.c2;
+      label = "최종 부피 V₂";
+    }
+
+    if (result < 0) {
+      showResult("d-result", "결과가 음수입니다. 입력값을 확인하세요.", true);
+      return;
+    }
+
+    // V1 을 구한 경우, 넣을 희석액(diluent) 양도 같이 알려준다.
+    let extra = "";
+    if (target === "v1" && vals.v2 !== null) {
+      const diluent = vals.v2 - result;
+      extra = "\n→ 희석액(용매) 추가량: " + fmt(diluent) + " (V₂ − V₁)";
+      if (diluent < 0) extra += "  ⚠️ 음수: 목표 농도가 stock 보다 진합니다.";
+    }
+
+    showResult("d-result", label + " = " + fmt(result) + extra, false);
+  }
+
+  /* ============================================================
+     2. 몰농도 ↔ 질량 농도 변환
+     ============================================================ */
+
+  // 변환 방향(select)에 따라 입력창 라벨/단위를 바꾼다.
+  function updateMolarityLabels() {
+    const mode = document.getElementById("m-mode").value;
+    const label = document.getElementById("m-input-label");
+    const unit = document.getElementById("m-input-unit");
+    if (mode === "molToMass") {
+      label.textContent = "몰농도";
+      unit.textContent = "mol/L";
+    } else {
+      label.textContent = "질량 농도";
+      unit.textContent = "g/L";
+    }
+  }
+
+  function calcMolarity() {
+    const mode = document.getElementById("m-mode").value;
+    const mw = readNum("m-mw");        // 분자량 g/mol
+    const value = readNum("m-value");  // 몰농도 또는 질량농도
+    const volMl = readNum("m-vol");    // 만들 부피 mL
+
+    // 필수값 검증
+    if (mw === null || value === null || !isFinite(mw) || !isFinite(value)) {
+      showResult("m-result", "분자량과 농도 값을 숫자로 입력하세요.", true);
+      return;
+    }
+    if (mw <= 0) {
+      showResult("m-result", "분자량은 0보다 커야 합니다.", true);
+      return;
+    }
+    if (value < 0) {
+      showResult("m-result", "농도는 음수가 될 수 없습니다.", true);
+      return;
+    }
+
+    let lines = [];
+
+    if (mode === "molToMass") {
+      // 몰농도(mol/L) → 질량농도(g/L)
+      const gPerL = value * mw;
+      lines.push("질량 농도 = " + fmt(gPerL) + " g/L  (= " + fmt(gPerL * 1000) + " mg/L)");
+      // 만들 부피가 주어지면 실제로 달아야 할 g 도 계산
+      if (volMl !== null && isFinite(volMl) && volMl > 0) {
+        const grams = gPerL * (volMl / 1000);   // mL → L 로 환산
+        lines.push(volMl + " mL 제조 시 필요한 시약: " + fmt(grams) + " g"
+                   + "  (= " + fmt(grams * 1000) + " mg)");
+      } else {
+        lines.push("(‘만들 부피’를 넣으면 달아야 할 g 도 계산됩니다.)");
+      }
+    } else {
+      // 질량농도(g/L) → 몰농도(mol/L)
+      const molPerL = value / mw;
+      lines.push("몰농도 = " + fmt(molPerL) + " mol/L  (= " + fmt(molPerL * 1000) + " mmol/L)");
+    }
+
+    showResult("m-result", lines.join("\n"), false);
+  }
+
+  /* ============================================================
+     3. OD600 → 세균 수 추정
+     ============================================================ */
+  function calcOD() {
+    const od = readNum("od-value");         // 측정 OD600
+    const factor = readNum("od-factor");    // 환산계수 cells/mL per OD
+    const culVol = readNum("od-culvol");    // 배양액 부피 mL
+
+    if (od === null || factor === null || !isFinite(od) || !isFinite(factor)) {
+      showResult("od-result", "OD₆₀₀ 값과 환산계수를 숫자로 입력하세요.", true);
+      return;
+    }
+    if (od < 0 || factor <= 0) {
+      showResult("od-result", "OD₆₀₀ 는 0 이상, 환산계수는 0보다 커야 합니다.", true);
+      return;
+    }
+
+    // 농도(cells/mL) = OD × factor
+    const cellsPerMl = od * factor;
+    let lines = [];
+    lines.push("세균 농도 ≈ " + fmt(cellsPerMl) + " cells/mL");
+
+    // 배양액 부피가 있으면 총 세균 수도 계산
+    if (culVol !== null && isFinite(culVol) && culVol > 0) {
+      const totalCells = cellsPerMl * culVol;
+      lines.push(culVol + " mL 배양액의 총 세균 수 ≈ " + fmt(totalCells) + " cells");
+    }
+
+    // OD 가 높으면 희석 후 측정 권고
+    if (od > 0.8) {
+      lines.push("\n⚠️ OD₆₀₀ 가 0.8을 넘습니다. 빛 산란 비선형성 때문에 "
+                 + "1:10 희석 후 다시 측정하고 값에 10을 곱하는 편이 정확합니다.");
+    }
+
+    showResult("od-result", lines.join("\n"), false);
+  }
+
+  // 페이지가 처음 열릴 때 몰농도 라벨을 현재 select 값에 맞춰 초기화
+  updateMolarityLabels();
+</script>
+
+</body>
+</html>
